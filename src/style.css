@@ -67,6 +67,10 @@ html, body {
     margin:auto;
 }
 
+.ship-grid > .header-sm {
+    margin: auto;
+}
+
 .rotate-btn {
     margin: auto;
     width: auto;
@@ -113,7 +117,7 @@ html, body {
 }
 
 .occupied {
-    background-color: red;
+    background-color: greenyellow;
 }
 .game-board-tile:hover{
     background-color:rgb(124, 180, 187)

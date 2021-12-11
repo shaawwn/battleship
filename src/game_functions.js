@@ -57,23 +57,6 @@ const createGameBoard = (size) => {
   const tiles = addBoardTiles();
   const gamePieces = [];
 
-  // const placeShip = (ship, shipLength, coordinates) => {
-  //   // Updates state of gameboard with new ship
-  //   for (let i = 0; i < coordinates.length; i++) {
-  //     const x = coordinates[i][0];
-  //     const y = coordinates[i][1];
-
-  //     if (tiles[x][y] === true) { // Cannot place ship on tile already occupied
-  //       throw new Error('Coordinates already occupied');
-  //     }
-  //     if ((x < 0 || x > size) || (y < 0 || y > size)) { // Coords cannot exceed board size
-  //       throw new Error('Invalid coordinates');
-  //     }
-  //     ship.sections[i].push([x, y]);
-  //     tiles[x][y] = true;
-  //   }
-  //   gamePieces.push(ship);
-  // };
   const checkTile = (x, y) => {
     // checks tile(x, y) as a valid space, returns boolean
     // console.log('CHECKTILE', x, y);
@@ -89,7 +72,7 @@ const createGameBoard = (size) => {
   const checkTiles = (x, y, shipLength, rotation) => {
     // x, y as starting points, check all tiles ship
     // would take up
-    if (rotation === true) {
+    if (rotation === 'true') {
       for (let i = 0; i < shipLength; i++) {
         if (tiles[x + i][y] === true) {
           throw new Error('coordinates already occupied');
@@ -111,42 +94,15 @@ const createGameBoard = (size) => {
     return true;
   };
 
-  // const placeShip = (ship, shipLength, coordinates, rotated = false) => {
-  //   // Update state of gamebaord with new ship using only one coordinate
-  //   if (rotated) {
-  //     // Along y axis
-  //     const y = coordinates[0];
-  //     const x = coordinates[1];
-  //     for (let i = 0; i < shipLength; i++) {
-  //       if (checkTile(y + i, x)) {
-  //         // Tiles will be placed as long as THAT tile is valid,
-  //         // can result in partial ship placements
-  //         ship.sections[i].push([y + i, x]);
-  //         tiles[y + i][x] = true;
-  //       }
-  //     }
-  //   } else {
-  //     // Along x axis
-  //     const x = coordinates[1];
-  //     const y = coordinates[0];
-  //     for (let i = 0; i < shipLength; i++) {
-  //       if (checkTile(y, x + i)) {
-  //         ship.sections[i].push([y, x + i]);
-  //         tiles[y][x + i] = true;
-  //       }
-  //     }
-  //   }
-  //   gamePieces.push(ship);
-  // };
-
-  const placeShip = (ship, shipLength, coordinates, rotated = false) => {
+  const placeShip = (ship, shipLength, coordinates, rotated) => {
     // Update state of gamebaord with new ship using only one coordinate
-    if (rotated) {
+    if (rotated === 'true') {
       const y = coordinates[0];
       const x = coordinates[1];
       if (checkTiles(y, x, shipLength, rotated)) {
         for (let i = 0; i < shipLength; i++) {
           ship.sections[i].push(y + i, x);
+          // console.log('XY', x, y);
           tiles[y + i][x] = true;
         }
       }
@@ -216,6 +172,21 @@ const createGameBoard = (size) => {
 // Player
 
 const Player = (boardSize, computer = false) => {
+  const ships = [5, 4, 3, 3, 2];
+  const currentShip = 0;
+  const playerShips = [];
+  ships.forEach((ship) => {
+    const newShip = createShip(ship);
+    playerShips.push(newShip);
+  });
+  const checkShipPlacement = (currentShip) => {
+    currentShip++;
+    // check for the final ship placement, return true, which will start the game
+    if (currentShip === 5) {
+      return true;
+    }
+    return false;
+  };
   const createBoard = () => {
     // set true for human player
     const playerBoard = createGameBoard(boardSize);
@@ -245,10 +216,45 @@ const Player = (boardSize, computer = false) => {
   const playerBoard = createBoard(boardSize);
 
   const checkVictory = () => playerBoard.gameOver();
+
+  function placeComputerShips() {
+    // Create Carrier(5), BS(4), submarine(3)x2, destroyer(2)
+    const ships = [5, 4, 3, 3, 2];
+    const rotations = ['true', 'false'];
+    // const { playerBoard } = computerPlayer.gameObject; // same as pb = CO.gameObject.playetrBoard
+    ships.forEach((ship) => {
+      const newShip = createShip(ship);
+      const rotation = rotations[Math.round(Math.random() * 1)]; // randomly gen. rotation
+      let randCoordinates = getRandomCoordinates();
+      let counter = 0;
+      while (true) {
+        counter += 1;
+        try {
+          if (playerBoard.checkTiles(randCoordinates[0], randCoordinates[1], ship, rotation)) {
+            playerBoard.placeShip(newShip, ship, randCoordinates, rotation);
+            break;
+          }
+        } catch {
+          randCoordinates = getRandomCoordinates();
+        }
+        if (counter > 100) {
+          break;
+        }
+      }
+    });
+  }
   return {
-    playerBoard, makeAttack, computerAttack, isComputer, checkVictory,
+    playerBoard, playerShips, currentShip, checkShipPlacement, makeAttack, computerAttack, isComputer, checkVictory, placeComputerShips,
   };
 };
+
+function getRandomCoordinates() {
+  // Generate random coordinates
+  // gameBord.checkTile should rturn if coordinates are valid
+  const x = Math.floor(Math.random() * (10));
+  const y = Math.floor(Math.random() * (10));
+  return [x, y];
+}
 
 const parseStringArray = (stringArray) => {
   const rawArray = stringArray.split(',');

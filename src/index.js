@@ -1,6 +1,6 @@
 import { createShip, createGameBoard, Player } from './game_functions';
 import {
-  createPlayer, getPlayerName, gameLoop, placeShip, placeComputerShips,
+  createPlayer, getPlayerName, gameLoop, placeShip,
 } from './game.js';
 import './style.css';
 
@@ -15,18 +15,12 @@ function loadStorage() {
 function loadPage() {
   // pass
   const storage = loadStorage();
-  createOutline();
-  const player1 = Player(10); // Don't create user player here
-  const computerPlayer = Player(10, true); // Probably ok to create computer, for now
-  // console.log('PLAYER DEETS', player1);
+  document.body.appendChild(createOutline());
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const banner = document.querySelector('.banner');
-    banner.innerText = 'Battleship';
-    // const gameSpace = document.querySelector('.game-space');
-    // populateGameSpace(gameSpace, [player1, computerPlayer]);
-    // mouseHover();
-  });
+//   document.addEventListener('DOMContentLoaded', () => {
+//     const banner = document.querySelector('.banner');
+//     banner.innerText = 'Battleship';
+//   });
 }
 
 function createOutline() {
@@ -41,14 +35,15 @@ function createOutline() {
   gameSpace.classList.add('game-space');
   playerDetails.classList.add('player-details');
 
+  bannerDiv.innerText = 'Battleship!';
   container.appendChild(bannerDiv);
-  // container.appendChild(rotateBtn);
   container.appendChild(gameSpace);
   container.appendChild(playerDetails);
   const modal = addModal();
   modal.style.display = 'block';
   container.appendChild(modal);
-  document.body.appendChild(container);
+  // document.body.appendChild(container); // appended to body in loadpage()
+  return container;
 }
 
 function populateGameSpace(gameSpace, players) {
@@ -68,32 +63,30 @@ function createBoard(player) {
   gameBoard.appendChild(playerBoardHeader);
 
   let boardRow = 0;
-  player.gameObject.playerBoard.tiles.forEach((row) => { // horizontal row 0-9
+  player.gameObject.playerBoard.tiles.forEach((row) => { // vertical row 0-9
     const gameBoardRow = document.createElement('div');
     let boardColumn = 0;
     gameBoardRow.classList.add('game-board-row');
     row.forEach(() => { // horizontal column 0-9
       const boardTile = document.createElement('div');
       boardTile.classList.add('game-board-tile');
-      if (player.gameObject.isComptuer === true) {
-        boardTile.setAttribute('data-tile', [boardRow, boardColumn]);
+      if (player.gameObject.isComputer() === true) {
+        // data-tile values are coordinates on the play grid
+        // data-tile-value indicates tile status -- true = occupied, hit/miss indicate attacks
+        boardTile.setAttribute('data-tile', [boardRow, boardColumn]); // change to data-tile-computer
         boardTile.value = player.gameObject.playerBoard.tiles[(boardRow, boardColumn)];
         boardTile.setAttribute('data-tile-value', player.gameObject.playerBoard.tiles[boardRow][boardColumn]);
       } else {
-        boardTile.setAttribute(`data-tile${player.name}`, [boardRow, boardColumn]);
+        boardTile.setAttribute(`data-tile${player.name}`, [boardRow, boardColumn]); // change to data-tile-player
         boardTile.setAttribute('data-tile-value', player.gameObject.playerBoard.tiles[boardRow][boardColumn]);
+        if (player.gameObject.playerBoard.tiles[boardRow][boardColumn] === true) {
+          // Moved inside conditional in order to hide computer ship locatations
+          boardTile.classList.add('occupied'); // indicates a tile is occupied by a ship
+        }
       }
-      boardTile.addEventListener('mouseover', (event) => {
-        const elementID = parseStringArray(
-          event.target.dataset[`tile${player.name.charAt(0).toLowerCase() + player.name.slice(1)}`],
-        );
-        // const rotation = rotateShip(rotateBtn);
-        const rotateBtn = document.getElementsByName('rotateBtn')[0];
-        highlightShip(elementID, 4, player, true); // Should now be coordinates [0,0], true=rotation value
-      });
-      if (player.gameObject.playerBoard.tiles[boardRow][boardColumn] === true) {
-        boardTile.classList.add('occupied');
-      }
+      // if (player.gameObject.playerBoard.tiles[boardRow][boardColumn] === true) {
+      //   boardTile.classList.add('occupied'); // indicates a tile is occupied by a ship
+      // }
       gameBoardRow.appendChild(boardTile);
       boardColumn++;
     });
@@ -101,6 +94,52 @@ function createBoard(player) {
     boardRow++;
   });
   return gameBoard;
+}
+
+function addBoardTileListeners(player, computerPlayer) {
+  // Add highlight ship, place ship listeners to board tiles.
+  const boardTiles = document.querySelectorAll('.game-board-tile');
+  boardTiles.forEach((tile) => {
+    tile.addEventListener('mouseover', (event) => {
+      placeShipHighlight(event, player);
+    });
+    tile.addEventListener('click', (event) => {
+      const shipGrid = document.querySelector('.ship-grid');
+      const tile = `tile${player.name.toLowerCase()}`;
+      const coordinates = parseStringArray(event.path[0].dataset[tile]);
+      const rotated = document.getElementsByName('rotateBtn')[0].value;
+      const { currentShip } = player.gameObject;
+      const ship = player.gameObject.playerShips[currentShip];
+      player.gameObject.playerBoard.placeShip(ship, ship.length, coordinates, rotated);
+
+      // player.gameObject.currentShip++;
+      if (player.gameObject.checkShipPlacement(currentShip) === true) {
+        // Close modal, load gameboards and start game!
+        const modal = document.querySelector('.modal');
+        const gameSpace = document.querySelector('.game-space');
+        modal.style.display = 'none';
+        populateGameSpace(gameSpace, [player, computerPlayer]);
+        gameLoop();
+        // should close the placeship grid and start the game at this point
+      }
+      // Change color of tiles
+      addShipTiles(coordinates, ship.length, player, computerPlayer, rotated);
+    });
+  });
+}
+
+function changeTileValues() {
+  // Change the tile values when a ship is placed
+  // tile should have attrbutes changed to reflect ship occupyng space(change class)
+}
+
+function placeShipHighlight(event, player, ship) {
+  const elementID = parseStringArray(
+    event.target.dataset[`tile${player.name.charAt(0).toLowerCase() + player.name.slice(1)}`],
+  );
+  const rotation = document.getElementsByName('rotateBtn')[0].value;
+  highlightShip(elementID, player.gameObject.playerShips[player.gameObject.currentShip]
+    .length, player, rotation);
 }
 
 function rotateButton() {
@@ -140,10 +179,6 @@ function addModal() {
   return modal;
 }
 
-function placeShipsOnBoard(gameBoard) {
-  // Player places ships on their game board
-}
-
 function addNamePrompt(modal) {
   // Prompt the player for their name
   const namePrompt = document.createElement('div');
@@ -163,13 +198,12 @@ function addNamePrompt(modal) {
   submitBtn.addEventListener('click', () => {
     const player = createPlayer(nameInput.value, false);
     const computerPlayer = createPlayer('Computer', true);
-    placeComputerShips(computerPlayer);
+    computerPlayer.gameObject.placeComputerShips();
     const gameSpace = document.querySelector('.game-space');
     // modal.style.display = 'none';
     namePrompt.style.display = 'none';
     modal.appendChild(placeShipMenu(player));
-    // gameLoop(player, computerPlayer);
-    // populateGameSpace(gameSpace, [player, computerPlayer]);
+    addBoardTileListeners(player, computerPlayer);
   });
   namePrompt.appendChild(header);
   namePrompt.appendChild(nameInput);
@@ -179,18 +213,82 @@ function addNamePrompt(modal) {
 
 function placeShipMenu(player) {
   // Modal menu for placing ships on the palyers grid at the start of the game.
-  // Attach prompts for adding ships
+  const currentShip = player.gameObject.playerShips[player.gameObject.currentShip].shipType.charAt(0).toUpperCase()
+    + player.gameObject.playerShips[player.gameObject.currentShip].shipType.slice(1);
   const shipGrid = document.createElement('div');
+  const chooseShipDisplay = document.createElement('p');
+  // const shipIndex = 0;
   shipGrid.classList.add('ship-grid');
+  chooseShipDisplay.classList.add('header-sm');
+  shipGrid.innerHTML = '';
+  chooseShipDisplay.innerText = `Deploy your ${currentShip}`;
+  shipGrid.appendChild(chooseShipDisplay);
   shipGrid.appendChild(rotateButton());
   shipGrid.appendChild(createBoard(player));
 
   return shipGrid;
 }
 
-function displayShips() {
+function placeShipListeners() {
+  // When a player clicks on VALID space, place a ship, then increment to the next ship, when the
+  // final ship is placed, close ship placement grid and load game boards.
+  const boardTiles = document.querySelectorAll('game-board-tile');
+  boardTiles.forEach((tile) => {
+    tile.addEventListener('click', () => {
+      placeShip(ship, shipLength, player, rotation);
+      // increment to the next ship
+      playerShips += 1;
+    });
+  });
+}
+function addShipTiles(coordinates, shipLength, player, computerPlayer, rotated) {
   // When ships are placed, their shapes should persist on the gameboard
+  const modal = document.querySelector('.modal');
+  if (rotated === 'true') {
+    permIncrementY(coordinates, shipLength, player);
+    modal.innerHTML = '';
+    player.gameObject.currentShip++;
+    modal.appendChild(placeShipMenu(player));
+    addBoardTileListeners(player, computerPlayer);
+  } else {
+    permIncrementX(coordinates, shipLength, player);
+    modal.innerHTML = '';
+    player.gameObject.currentShip++;
+    modal.appendChild(placeShipMenu(player));
+    addBoardTileListeners(player, computerPlayer);
+  }
+}
 
+function permIncrementY(elementID, shipLength, player) {
+  // Helper for highlighShip()
+  for (let i = 0; i < shipLength; i++) {
+    try {
+      const square = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`);
+      square.classList.add('highlighted');
+    } catch {
+      for (let i = 0; i < shipLength; i++) {
+        const square = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`); // adjust on vertical axis
+        square.classList.add('invalid');
+      }
+      console.log('There is no square');
+    }
+  }
+}
+
+function permIncrementX(elementID, shipLength, player) {
+  // Helper for highlighShip()
+  for (let i = 0; i < shipLength; i++) {
+    try {
+      const square = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`);
+      square.classList.add('highlighted');
+    } catch {
+      for (let i = 0; i < shipLength; i++) {
+        const square = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`); // adjust on vertical axis
+        square.classList.add('invalid');
+      }
+      console.log('There is no square');
+    }
+  }
 }
 function playerName(player) {
   if (player.gameObject.isComputer() === false) {
@@ -199,7 +297,7 @@ function playerName(player) {
   return 'Computer';
 }
 
-function highlightShip(elementID, shipLength, player, rotated) {
+function highlightShip(elementID, shipLength, player, rotated, placed) {
   // Highlights a 'ship' placement when moving the cursor over the gameboard
   if (rotated === 'true') {
     incrementY(elementID, shipLength, player);
@@ -254,17 +352,3 @@ function incrementX(elementID, shipLength, player) {
   }
 }
 loadPage();
-
-function testElements() {
-  const player1 = Player(10);
-  const player2 = Player(10, true);
-  // Banner
-
-  // Display both player boards
-  // document.body.appendChild(createGameSpace([player1, player2]));
-
-  // PlayerBoard
-  // document.body.appendChild(createBoard(player));
-}
-
-testElements();

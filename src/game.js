@@ -23,39 +23,32 @@ function placeShip(player, ship, shipLength, coordinates, rotated) {
   player.playerBoard.placeShip(ship, shipLength, coordinates, rotated);
 }
 
-function placeComputerShips(computerPlayer) {
-  // Create Carrier(5), BS(4), submarine(3)x2, destroyer(2)
-  const ships = [5, 4, 3, 3, 2];
-  const rotations = [true, false];
-  const { playerBoard } = computerPlayer.gameObject; // same as pb = CO.gameObject.playetrBoard
-  ships.forEach((ship) => {
-    const newShip = createShip(ship);
-    const rotation = rotations[Math.round(Math.random() * 1)]; // randomly gen. rotation
-    let randCoordinates = getRandomCoordinates();
-    let counter = 0;
-    while (true) {
-      counter += 1;
-      // console.log(randCoordinates, ship, rotation, computerPlayer.gameObject);
-      try {
-        // console.log('START OF WHILE', randCoordinates, rotation);
-        if (playerBoard.checkTiles(randCoordinates[0], randCoordinates[1], ship, rotation)) {
-          // console.log('Placing ship', ship);
-          console.log('RETURNING TRUE?');
-          playerBoard.placeShip(newShip, ship, randCoordinates, rotation);
-          // console.log('Ship placed', ship);
-          break;
-        }
-      } catch {
-        console.log('ERROR');
-        randCoordinates = getRandomCoordinates();
-      }
-      if (counter > 100) {
-        console.log('condition not met');
-        break;
-      }
-    }
-  });
-}
+// function placeComputerShips(computerPlayer) {
+//   // Create Carrier(5), BS(4), submarine(3)x2, destroyer(2)
+//   const ships = [5, 4, 3, 3, 2];
+//   const rotations = [true, false];
+//   const { playerBoard } = computerPlayer.gameObject; // same as pb = CO.gameObject.playetrBoard
+//   ships.forEach((ship) => {
+//     const newShip = createShip(ship);
+//     const rotation = rotations[Math.round(Math.random() * 1)]; // randomly gen. rotation
+//     let randCoordinates = getRandomCoordinates();
+//     let counter = 0;
+//     while (true) {
+//       counter += 1;
+//       try {
+//         if (playerBoard.checkTiles(randCoordinates[0], randCoordinates[1], ship, rotation)) {
+//           playerBoard.placeShip(newShip, ship, randCoordinates, rotation);
+//           break;
+//         }
+//       } catch {
+//         randCoordinates = getRandomCoordinates();
+//       }
+//       if (counter > 100) {
+//         break;
+//       }
+//     }
+//   });
+// }
 
 function getRandomCoordinates() {
   // Generate random coordinates
@@ -65,11 +58,22 @@ function getRandomCoordinates() {
   return [x, y];
 }
 
-function gameLoop(player1, player2) {
+function gameLoop(playername) {
   // When the user enters their name and hits submit, the game starts.
   console.log('Game starting, place your ships!');
+  const ships = [5, 4, 3, 3, 2];
+  const player = Player(10, false);
+  const computer = Player(10, true);
+  computer.placeComputerShips();
+
+  // ships.forEach((ship) => {
+  //   const newShip = createShip(ship);
+  //   // Prompt user to place ship at this point
+  //   // User prompt should return COORDINATES and ROTATION
+  //   player.playerBoard.placeShip(newShip, newShip.length, coordinates, rotation);
+  // });
 }
 
 export {
-  createPlayer, getPlayerName, gameLoop, placeShip, placeComputerShips,
+  createPlayer, getPlayerName, gameLoop, placeShip,
 };
