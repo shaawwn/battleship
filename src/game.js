@@ -1,4 +1,8 @@
-import { createShip, createGameBoard, Player } from './game_functions';
+import {
+  createShip, createGameBoard, Player, parseStringArray,
+} from './game_functions';
+
+import { createBoard } from './index.js';
 
 console.log('Loading game scripts....');
 
@@ -58,20 +62,72 @@ function getRandomCoordinates() {
   return [x, y];
 }
 
-function gameLoop(playername) {
-  // When the user enters their name and hits submit, the game starts.
-  console.log('Game starting, place your ships!');
-  const ships = [5, 4, 3, 3, 2];
-  const player = Player(10, false);
-  const computer = Player(10, true);
-  computer.placeComputerShips();
+function computerAttack(player) {
+  // Computer attacks player
+  const playerTiles = document.querySelectorAll('[data-tile-player]');
+  const randomCoordinates = getRandomCoordinates();
+  const playerTile = document.querySelector(`[data-tile-player="${randomCoordinates}"]`);
+  // if (player.gameObject.playerBoard.recieveAttack(randomCoordinates)) {
+  //   // Mark player gameboard with hits/misses at randomCoordinates
+  //   playerTile.classList.add('hit-ship');
+  // }
+  // playerTile.classList.add('miss');
 
-  // ships.forEach((ship) => {
-  //   const newShip = createShip(ship);
-  //   // Prompt user to place ship at this point
-  //   // User prompt should return COORDINATES and ROTATION
-  //   player.playerBoard.placeShip(newShip, newShip.length, coordinates, rotation);
-  // });
+  // while (true) {
+  //   try {
+  //     if (player.gameObject.playerBoard.recieveAttack(randomCoordinates)) {
+  //     // Mark player gameboard with hits/misses at randomCoordinates
+  //       playerTile.classList.add('hit-ship');
+  //     } else {
+  //       playerTile.classList.add('miss');
+  //     }
+  //     break;
+  //   } catch {
+  //     randomCoordinates = getRandomCoordinates(); // needs to loop back up and cont. attack
+  //   }
+  // }
+  try {
+    if (player.gameObject.playerBoard.recieveAttack(randomCoordinates)) {
+      playerTile.classList.add('hit-ship');
+    } else {
+      playerTile.classList.add('miss');
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function gameLoop(player, computerPlayer) {
+  // When the user enters their name and hits submit, the game starts.
+  console.log('Game starting, place your ships!', player, computerPlayer);
+  // starting with player 1, go back and forth firing shots
+  // when a player clicks, it should mark the attack, and computer should
+  // immediately make their move, only click on comptuer board
+  const computerTiles = document.querySelectorAll('[data-tile-computer]');
+  const playerTiles = document.querySelectorAll('[data-tile-player]');
+  computerTiles.forEach((tile) => {
+    const coordinates = parseStringArray(tile.dataset.tileComputer);
+    tile.addEventListener('click', () => {
+      if (computerPlayer.gameObject.playerBoard.recieveAttack(coordinates)) {
+        tile.classList.add('hit-ship');
+      } else {
+        tile.classList.add('miss');
+      }
+      if (computerPlayer.gameObject.checkVictory()) {
+        alert('You won!');
+      }
+      // Computer attacks player
+      while (computerAttack(player) === false) {
+        if (computerAttack(player)) {
+          if (player.gameObject.checkVictory()) {
+            alert('You lost! Oh no!');
+          }
+          break;
+        }
+      }
+    });
+  });
 }
 
 export {

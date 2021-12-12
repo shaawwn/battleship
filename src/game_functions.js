@@ -136,17 +136,20 @@ const createGameBoard = (size) => {
       // Have coordinates, need to match coordinates to ship position
       for (let i = 0; i < gamePieces.length; i++) {
         const ship = gamePieces[i];
-        const sectionKeys = Object.keys(ship.sections);
-        for (let i = 0; i < sectionKeys.length; i++) {
-          const stringKey = JSON.stringify(ship.sections[sectionKeys[i]][1]);
-          if (stringKey === JSON.stringify([x, y])) {
+        const sectionKeys = Object.keys(ship.sections); // the index of ship sections
+        for (let i = 0; i < sectionKeys.length; i++) { // loops through length of ship
+          const stringKey = [ship.sections[sectionKeys[i]][1],
+            ship.sections[sectionKeys[i]][2]]; // ship section coords
+          // console.log('String key', JSON.stringify(stringKey), JSON.stringify([x, y]));
+          if (JSON.stringify(stringKey) === JSON.stringify([x, y])) {
+            // console.log('Hitting ship');
             ship.hit(sectionKeys[i]);
           }
         }
       }
-    } else {
-      tiles[x][y] = 'miss';
+      return true; // added this recently
     }
+    tiles[x][y] = 'miss';
   };
 
   const displayShips = () => {

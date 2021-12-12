@@ -1,51 +1,37 @@
-const placeShip = (ship, shipLength, coordinates, rotated = false) => {
-  // Update state of gamebaord with new ship using only one coordinate
-  if (rotated) {
-    // Along y axis
-    const y = coordinates[0];
-    const x = coordinates[1];
-    for (let i = 0; i < shipLength; i++) {
-      if (checkTile(y + i, x)) {
-        // Tiles will be placed as long as THAT tile is valid,
-        // can result in partial ship placements
-        ship.sections[i].push([y + i, x]);
-        tiles[y + i][x] = true;
-      }
-    }
-  } else {
-    // Along x axis
-    const x = coordinates[1];
-    const y = coordinates[0];
-    for (let i = 0; i < shipLength; i++) {
-      if (checkTile(y, x + i)) {
-        ship.sections[i].push([y, x + i]);
-        tiles[y][x + i] = true;
-      }
-    }
-  }
-  gamePieces.push(ship);
-};
+function addBoardTileListeners(player, computerPlayer) {
+  // Add highlight ship, place ship listeners to board tiles.
+  const boardTiles = document.querySelectorAll('.game-board-tile');
+  boardTiles.forEach((tile) => {
+    tile.addEventListener('mouseover', (event) => {
+      placeShipHighlight(event, player);
+    });
+    tile.addEventListener('click', (event) => {
+      const shipGrid = document.querySelector('.ship-grid');
+      const tile = `tile${player.name.toLowerCase()}`;
+      const coordinates = parseStringArray(event.path[0].dataset[tile]);
+      const rotated = document.getElementsByName('rotateBtn')[0].value;
+      const { currentShip } = player.gameObject;
+      const ship = player.gameObject.playerShips[currentShip];
+      player.gameObject.playerBoard.placeShip(ship, ship.length, coordinates, rotated);
 
-const placeShip = (ship, shipLength, coordinates, rotated = false) => {
-  // Update state of gamebaord with new ship using only one coordinate
-  if (rotated) {
-    const y = coordinates[0];
-    const x = coordinates[1];
-    if(checkTiles(y, x, shipLength, rotated)) {
-      for(let i = 0; i < shipLength;i++) {
-        ship.sections[i].push(y + i, x);
-        tiles[y + i][x] = true;
+      // player.gameObject.currentShip++;
+      if (player.gameObject.checkShipPlacement(currentShip) === true) {
+        // Close modal, load gameboards and start game!
+        const modal = document.querySelector('.modal');
+        const gameSpace = document.querySelector('.game-space');
+        modal.style.display = 'none';
+        populateGameSpace(gameSpace, [player, computerPlayer]);
+        gameLoop();
+        // should close the placeship grid and start the game at this point
       }
-    }
-  } else {
-    const x = coordinates[1];
-    const y = coordinates[0];
-    if(checkTiles(y, x, shipLength, rotated)) {
-      for(let i = 0, i < shipLength;i++) {
-        ship.sections[i].push(y, x + i);
-        tiles[y][x + i]
-      }
-    }
-  }
-  gamePieces.push(ship)
-};
+      // Change color of tiles
+      addShipTiles(coordinates, ship.length, player, computerPlayer, rotated);
+    });
+  });
+}
+
+function clickToPlaceShip(player) {
+  const { currentShip } = player.gameObject;
+  const ship = player.gameObject.playerShips[currentShip];
+  player.gameObject.playerBoard.placeShip(ship, ship.length, coordinates, rotated);
+}

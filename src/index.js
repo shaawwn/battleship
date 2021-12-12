@@ -58,6 +58,7 @@ function createBoard(player) {
   const playerBoardHeader = document.createElement('p');
   // const rotateBtn = document.getElementsByName('rotateBtn')[0];
   gameBoard.classList.add('game-board');
+  gameBoard.setAttribute('name', playerName(player));
   playerBoardHeader.classList.add('player-header');
   playerBoardHeader.innerText = playerName(player);
   gameBoard.appendChild(playerBoardHeader);
@@ -73,17 +74,20 @@ function createBoard(player) {
       if (player.gameObject.isComputer() === true) {
         // data-tile values are coordinates on the play grid
         // data-tile-value indicates tile status -- true = occupied, hit/miss indicate attacks
-        boardTile.setAttribute('data-tile', [boardRow, boardColumn]); // change to data-tile-computer
-        boardTile.value = player.gameObject.playerBoard.tiles[(boardRow, boardColumn)];
+        boardTile.setAttribute('data-tile-computer', [boardRow, boardColumn]); // change to data-tile-computer
         boardTile.setAttribute('data-tile-value', player.gameObject.playerBoard.tiles[boardRow][boardColumn]);
       } else {
-        boardTile.setAttribute(`data-tile${player.name}`, [boardRow, boardColumn]); // change to data-tile-player
+        // boardTile.setAttribute(`data-tile${player.name}`, [boardRow, boardColumn]); // change to data-tile-player
+        // boardTile.setAttribute('data-tile-value', player.gameObject.playerBoard.tiles[boardRow][boardColumn]);
+        boardTile.setAttribute('data-tile-player', [boardRow, boardColumn]); // change to data-tile-player
         boardTile.setAttribute('data-tile-value', player.gameObject.playerBoard.tiles[boardRow][boardColumn]);
         if (player.gameObject.playerBoard.tiles[boardRow][boardColumn] === true) {
           // Moved inside conditional in order to hide computer ship locatations
+          // move outside to view computer placements
           boardTile.classList.add('occupied'); // indicates a tile is occupied by a ship
         }
       }
+      // comment out to hide computer ship positions (testing)
       // if (player.gameObject.playerBoard.tiles[boardRow][boardColumn] === true) {
       //   boardTile.classList.add('occupied'); // indicates a tile is occupied by a ship
       // }
@@ -106,7 +110,7 @@ function addBoardTileListeners(player, computerPlayer) {
     tile.addEventListener('click', (event) => {
       const shipGrid = document.querySelector('.ship-grid');
       const tile = `tile${player.name.toLowerCase()}`;
-      const coordinates = parseStringArray(event.path[0].dataset[tile]);
+      const coordinates = parseStringArray(event.path[0].dataset.tilePlayer);
       const rotated = document.getElementsByName('rotateBtn')[0].value;
       const { currentShip } = player.gameObject;
       const ship = player.gameObject.playerShips[currentShip];
@@ -119,7 +123,7 @@ function addBoardTileListeners(player, computerPlayer) {
         const gameSpace = document.querySelector('.game-space');
         modal.style.display = 'none';
         populateGameSpace(gameSpace, [player, computerPlayer]);
-        gameLoop();
+        gameLoop(player, computerPlayer);
         // should close the placeship grid and start the game at this point
       }
       // Change color of tiles
@@ -135,7 +139,8 @@ function changeTileValues() {
 
 function placeShipHighlight(event, player, ship) {
   const elementID = parseStringArray(
-    event.target.dataset[`tile${player.name.charAt(0).toLowerCase() + player.name.slice(1)}`],
+    // event.target.dataset[`tile${player.name.charAt(0).toLowerCase() + player.name.slice(1)}`],
+    event.target.dataset.tilePlayer,
   );
   const rotation = document.getElementsByName('rotateBtn')[0].value;
   highlightShip(elementID, player.gameObject.playerShips[player.gameObject.currentShip]
@@ -226,6 +231,9 @@ function placeShipMenu(player) {
   shipGrid.appendChild(rotateButton());
   shipGrid.appendChild(createBoard(player));
 
+  const board = createBoard(player);
+  console.log(board);
+
   return shipGrid;
 }
 
@@ -241,14 +249,15 @@ function placeShipListeners() {
     });
   });
 }
+
 function addShipTiles(coordinates, shipLength, player, computerPlayer, rotated) {
   // When ships are placed, their shapes should persist on the gameboard
   const modal = document.querySelector('.modal');
   if (rotated === 'true') {
-    permIncrementY(coordinates, shipLength, player);
-    modal.innerHTML = '';
+    permIncrementY(coordinates, shipLength, player); // add ship to grid
+    modal.innerHTML = ''; // reset modal
     player.gameObject.currentShip++;
-    modal.appendChild(placeShipMenu(player));
+    modal.appendChild(placeShipMenu(player)); // update changes to grid
     addBoardTileListeners(player, computerPlayer);
   } else {
     permIncrementX(coordinates, shipLength, player);
@@ -263,11 +272,11 @@ function permIncrementY(elementID, shipLength, player) {
   // Helper for highlighShip()
   for (let i = 0; i < shipLength; i++) {
     try {
-      const square = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`);
+      const square = document.querySelector(`[data-tile-player='${[elementID[0] + i, elementID[1]]}']`);
       square.classList.add('highlighted');
     } catch {
       for (let i = 0; i < shipLength; i++) {
-        const square = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`); // adjust on vertical axis
+        const square = document.querySelector(`[data-tile-player='${[elementID[0] + i, elementID[1]]}']`); // adjust on vertical axis
         square.classList.add('invalid');
       }
       console.log('There is no square');
@@ -279,11 +288,11 @@ function permIncrementX(elementID, shipLength, player) {
   // Helper for highlighShip()
   for (let i = 0; i < shipLength; i++) {
     try {
-      const square = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`);
+      const square = document.querySelector(`[data-tile-player='${[elementID[0], elementID[1] + i]}']`);
       square.classList.add('highlighted');
     } catch {
       for (let i = 0; i < shipLength; i++) {
-        const square = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`); // adjust on vertical axis
+        const square = document.querySelector(`[data-tile-player='${[elementID[0], elementID[1] + i]}']`); // adjust on vertical axis
         square.classList.add('invalid');
       }
       console.log('There is no square');
@@ -310,18 +319,18 @@ function incrementY(elementID, shipLength, player) {
   // Helper for highlighShip()
   for (let i = 0; i < shipLength; i++) {
     try {
-      const square = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`);
+      const square = document.querySelector(`[data-tile-player='${[elementID[0] + i, elementID[1]]}']`);
       square.classList.add('highlighted');
       square.addEventListener('mouseout', () => {
         for (let i = 0; i < shipLength; i++) {
-          const removeSquare = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`);
+          const removeSquare = document.querySelector(`[data-tile-player='${[elementID[0] + i, elementID[1]]}']`);
           removeSquare.classList.remove('highlighted');
           removeSquare.classList.remove('invalid');
         }
       });
     } catch {
       for (let i = 0; i < shipLength; i++) {
-        const square = document.querySelector(`[data-tile${player.name}='${[elementID[0] + i, elementID[1]]}']`); // adjust on vertical axis
+        const square = document.querySelector(`[data-tile-player='${[elementID[0] + i, elementID[1]]}']`); // adjust on vertical axis
         square.classList.add('invalid');
       }
       console.log('There is no square');
@@ -333,18 +342,18 @@ function incrementX(elementID, shipLength, player) {
   // Helper for highlighShip()
   for (let i = 0; i < shipLength; i++) {
     try {
-      const square = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`);
+      const square = document.querySelector(`[data-tile-player='${[elementID[0], elementID[1] + i]}']`);
       square.classList.add('highlighted');
       square.addEventListener('mouseout', () => {
         for (let i = 0; i < shipLength; i++) {
-          const removeSquare = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`);
+          const removeSquare = document.querySelector(`[data-tile-player='${[elementID[0], elementID[1] + i]}']`);
           removeSquare.classList.remove('highlighted');
           removeSquare.classList.remove('invalid');
         }
       });
     } catch {
       for (let i = 0; i < shipLength; i++) {
-        const square = document.querySelector(`[data-tile${player.name}='${[elementID[0], elementID[1] + i]}']`); // adjust on vertical axis
+        const square = document.querySelector(`[data-tile-player='${[elementID[0], elementID[1] + i]}']`); // adjust on vertical axis
         square.classList.add('invalid');
       }
       console.log('There is no square');
@@ -352,3 +361,7 @@ function incrementX(elementID, shipLength, player) {
   }
 }
 loadPage();
+
+export {
+  createBoard,
+};

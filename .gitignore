@@ -2,3 +2,4 @@ node_modules
 _tests
 .babelrc
 .eslintrc.json
+copy.js

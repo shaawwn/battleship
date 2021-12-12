@@ -119,6 +119,27 @@ html, body {
 .occupied {
     background-color: greenyellow;
 }
+
+.hit-ship {
+    background-color: red;
+    animation-name: hit;
+    animation-duration: 1.5s;
+}
+
+@keyframes hit {
+    from {background-color: yellow}
+    to {background-color: red;}
+}
+.miss {
+    background-color: blue;
+    animation-name: miss;
+    animation-duration: 1s;
+}
+
+@keyframes miss {
+    from{ background-color: white;}
+    to {background-color: blue;}
+}
 .game-board-tile:hover{
     background-color:rgb(124, 180, 187)
 }
